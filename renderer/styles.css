@@ -588,6 +588,29 @@ main {
 }
 
 /* Results Preview */
+.individual-results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #0f2537;
+    border-radius: 6px;
+}
+
+.individual-result-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.result-value-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
 .results-preview {
     display: flex;
     flex-direction: column;
@@ -602,6 +625,8 @@ main {
     background: #0f2537;
     border-radius: 6px;
     border: 1px solid #3a5a72;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .result-label {
@@ -613,6 +638,50 @@ main {
     color: #4dd0e1;
     font-weight: bold;
     font-size: 1.1em;
+}
+
+/* Category Badge Styles */
+.category-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: bold;
+    border: 2px solid;
+}
+
+.category-badge.codorna {
+    background: #ffcccb;
+    border-color: #ff9999;
+    color: #660000;
+}
+
+.category-badge.galinha {
+    background: #add8e6;
+    border-color: #87ceeb;
+    color: #003366;
+}
+
+.category-badge.laranja {
+    background: #ffffe0;
+    border-color: #ffff99;
+    color: #666600;
+}
+
+.category-badge.coco-verde {
+    background: #90ee90;
+    border-color: #77dd77;
+    color: #006600;
+}
+
+.category-badge.coco-seco {
+    background: #a0826d;
+    border-color: #8b6f47;
+    color: #ffffff;
+}
+
+.category-badge:empty {
+    display: none;
 }
 
 /* Buttons */
@@ -714,6 +783,148 @@ main {
         transform: translateY(0);
         opacity: 1;
     }
+}
+
+/* Custom Alert/Confirm Dialog */
+.custom-alert-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    animation: fadeIn 0.3s;
+}
+
+.custom-alert-dialog {
+    background: #0f2537;
+    border-radius: 12px;
+    border: 2px solid #3a5a72;
+    max-width: 450px;
+    width: 90%;
+    padding: 30px;
+    text-align: center;
+    animation: slideIn 0.3s;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.custom-alert-icon {
+    font-size: 3.5em;
+    margin-bottom: 20px;
+}
+
+.custom-alert-icon.info {
+    color: #4dd0e1;
+}
+
+.custom-alert-icon.warning {
+    color: #ffc107;
+}
+
+.custom-alert-icon.error {
+    color: #ff6b6b;
+}
+
+.custom-alert-icon.success {
+    color: #90ee90;
+}
+
+.custom-alert-title {
+    color: #e0e0e0;
+    font-size: 1.4em;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.custom-alert-message {
+    color: #b0b0b0;
+    font-size: 1em;
+    margin-bottom: 25px;
+    line-height: 1.5;
+}
+
+.custom-alert-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.custom-alert-buttons .btn {
+    min-width: 100px;
+}
+
+/* Flatpickr Calendar Customization */
+.flatpickr-calendar {
+    background: #0f2537 !important;
+    border: 2px solid #3a5a72 !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
+.flatpickr-months {
+    background: #1a2f42 !important;
+}
+
+.flatpickr-current-month .flatpickr-monthDropdown-months,
+.flatpickr-current-month input.cur-year {
+    color: #e0e0e0 !important;
+    background: #1a2f42 !important;
+}
+
+.flatpickr-weekday {
+    color: #4dd0e1 !important;
+}
+
+.flatpickr-day {
+    color: #e0e0e0 !important;
+}
+
+.flatpickr-day:hover {
+    background: #3a5a72 !important;
+    border-color: #3a5a72 !important;
+}
+
+.flatpickr-day.selected {
+    background: #4dd0e1 !important;
+    border-color: #4dd0e1 !important;
+    color: #0a1929 !important;
+}
+
+.flatpickr-day.today {
+    border-color: #ffc107 !important;
+}
+
+.flatpickr-day.hasEntry {
+    background: #2a4a62 !important;
+    position: relative;
+}
+
+.flatpickr-day.hasEntry::after {
+    content: '●';
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #4dd0e1;
+    font-size: 8px;
+}
+
+.flatpickr-day.prevMonthDay,
+.flatpickr-day.nextMonthDay {
+    color: #6a8a9a !important;
+}
+
+.flatpickr-months .flatpickr-prev-month svg,
+.flatpickr-months .flatpickr-next-month svg {
+    fill: #4dd0e1 !important;
+}
+
+.flatpickr-months .flatpickr-prev-month:hover svg,
+.flatpickr-months .flatpickr-next-month:hover svg {
+    fill: #3db8c9 !important;
 }
 
 /* Responsive Design */

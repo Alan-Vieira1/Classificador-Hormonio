@@ -1,6 +1,83 @@
 // Home page functionality
 let allProjects = [];
 
+// Custom Alert/Confirm Functions
+function customAlert(message, title = 'Aviso', type = 'info') {
+    return new Promise((resolve) => {
+        const icons = {
+            info: 'ℹ️',
+            warning: '⚠️',
+            error: '❌',
+            success: '✅'
+        };
+        
+        const overlay = document.createElement('div');
+        overlay.className = 'custom-alert-overlay';
+        overlay.innerHTML = `
+            <div class="custom-alert-dialog">
+                <div class="custom-alert-icon ${type}">${icons[type] || icons.info}</div>
+                <h3 class="custom-alert-title">${title}</h3>
+                <p class="custom-alert-message">${message}</p>
+                <div class="custom-alert-buttons">
+                    <button class="btn btn-primary alert-ok">OK</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        
+        const okBtn = overlay.querySelector('.alert-ok');
+        okBtn.addEventListener('click', () => {
+            document.body.removeChild(overlay);
+            resolve(true);
+        });
+        
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                document.body.removeChild(overlay);
+                resolve(true);
+            }
+        });
+    });
+}
+
+function customConfirm(message, title = 'Confirmar') {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'custom-alert-overlay';
+        overlay.innerHTML = `
+            <div class="custom-alert-dialog">
+                <div class="custom-alert-icon warning">⚠️</div>
+                <h3 class="custom-alert-title">${title}</h3>
+                <p class="custom-alert-message">${message}</p>
+                <div class="custom-alert-buttons">
+                    <button class="btn btn-primary confirm-yes">Sim</button>
+                    <button class="btn btn-secondary confirm-no">Não</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        
+        overlay.querySelector('.confirm-yes').addEventListener('click', () => {
+            document.body.removeChild(overlay);
+            resolve(true);
+        });
+        
+        overlay.querySelector('.confirm-no').addEventListener('click', () => {
+            document.body.removeChild(overlay);
+            resolve(false);
+        });
+        
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                document.body.removeChild(overlay);
+                resolve(false);
+            }
+        });
+    });
+}
+
 // DOM Elements
 const newProjectBtn = document.getElementById('newProjectBtn');
 const openProjectBtn = document.getElementById('openProjectBtn');
@@ -170,7 +247,7 @@ async function createNewProject() {
     const description = document.getElementById('projectDescription').value.trim();
     
     if (!name) {
-        alert('Por favor, insira um nome para o projeto.');
+        await customAlert('Por favor, insira um nome para o projeto.', 'Nome Obrigatório', 'warning');
         return;
     }
     
@@ -191,11 +268,11 @@ async function createNewProject() {
             newProjectForm.reset();
             openProject(projectData.id);
         } else {
-            alert('Erro ao criar projeto: ' + result.error);
+            await customAlert('Erro ao criar projeto: ' + result.error, 'Erro', 'error');
         }
     } catch (error) {
         console.error('Error creating project:', error);
-        alert('Erro ao criar projeto');
+        await customAlert('Erro ao criar projeto', 'Erro', 'error');
     }
 }
 
@@ -212,8 +289,8 @@ async function deleteProject(projectId, event) {
     event.stopPropagation();
     
     const confirmed = await customConfirm(
-        'Confirmar Exclusão',
-        'Tem certeza que deseja excluir este projeto? Todas as entradas serão perdidas.'
+        'Tem certeza que deseja excluir este projeto? Todas as entradas serão perdidas.',
+        'Confirmar Exclusão'
     );
     
     if (!confirmed) return;
@@ -223,12 +300,13 @@ async function deleteProject(projectId, event) {
         
         if (result.success) {
             await loadProjects();
+            await customAlert('Projeto excluído com sucesso!', 'Sucesso', 'success');
         } else {
-            alert('Erro ao excluir projeto: ' + result.error);
+            await customAlert('Erro ao excluir projeto: ' + result.error, 'Erro', 'error');
         }
     } catch (error) {
         console.error('Error deleting project:', error);
-        alert('Erro ao excluir projeto');
+        await customAlert('Erro ao excluir projeto', 'Erro', 'error');
     }
 }
 
@@ -245,46 +323,6 @@ function showModal(modal) {
 
 function hideModal(modal) {
     modal.classList.remove('show');
-}
-
-// Custom confirm dialog
-function customConfirm(title, message) {
-    return new Promise((resolve) => {
-        const dialog = document.createElement('div');
-        dialog.className = 'modal show';
-        dialog.innerHTML = `
-            <div class="modal-content" style="max-width: 450px;">
-                <div class="modal-body" style="text-align: center; padding: 30px;">
-                    <div style="font-size: 3em; margin-bottom: 15px;">⚠️</div>
-                    <h3 style="color: #e0e0e0; margin-bottom: 15px; font-size: 1.3em;">${title}</h3>
-                    <p style="color: #b0b0b0; margin-bottom: 25px; font-size: 1em;">${message}</p>
-                    <div style="display: flex; gap: 15px; justify-content: center;">
-                        <button class="btn btn-primary confirm-yes">Sim</button>
-                        <button class="btn btn-secondary confirm-no">Não</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(dialog);
-        
-        dialog.querySelector('.confirm-yes').addEventListener('click', () => {
-            document.body.removeChild(dialog);
-            resolve(true);
-        });
-        
-        dialog.querySelector('.confirm-no').addEventListener('click', () => {
-            document.body.removeChild(dialog);
-            resolve(false);
-        });
-        
-        dialog.addEventListener('click', (e) => {
-            if (e.target === dialog) {
-                document.body.removeChild(dialog);
-                resolve(false);
-            }
-        });
-    });
 }
 
 // Utility function to escape HTML

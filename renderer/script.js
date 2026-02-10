@@ -9,6 +9,109 @@ let measurementData = {
     teste2: []
 };
 let chartInstance = null;
+let datePickerInstance = null;
+let dateFromPicker = null;
+let dateToPicker = null;
+
+// Custom Alert/Confirm Functions
+function customAlert(message, title = 'Aviso', type = 'info') {
+    return new Promise((resolve) => {
+        const icons = {
+            info: 'ℹ️',
+            warning: '⚠️',
+            error: '❌',
+            success: '✅'
+        };
+        
+        const overlay = document.createElement('div');
+        overlay.className = 'custom-alert-overlay';
+        overlay.innerHTML = `
+            <div class="custom-alert-dialog">
+                <div class="custom-alert-icon ${type}">${icons[type] || icons.info}</div>
+                <h3 class="custom-alert-title">${title}</h3>
+                <p class="custom-alert-message">${message}</p>
+                <div class="custom-alert-buttons">
+                    <button class="btn btn-primary alert-ok">OK</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        
+        const okBtn = overlay.querySelector('.alert-ok');
+        okBtn.addEventListener('click', () => {
+            document.body.removeChild(overlay);
+            resolve(true);
+        });
+        
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                document.body.removeChild(overlay);
+                resolve(true);
+            }
+        });
+    });
+}
+
+function customConfirm(message, title = 'Confirmar') {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'custom-alert-overlay';
+        overlay.innerHTML = `
+            <div class="custom-alert-dialog">
+                <div class="custom-alert-icon warning">⚠️</div>
+                <h3 class="custom-alert-title">${title}</h3>
+                <p class="custom-alert-message">${message}</p>
+                <div class="custom-alert-buttons">
+                    <button class="btn btn-primary confirm-yes">Sim</button>
+                    <button class="btn btn-secondary confirm-no">Não</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        
+        overlay.querySelector('.confirm-yes').addEventListener('click', () => {
+            document.body.removeChild(overlay);
+            resolve(true);
+        });
+        
+        overlay.querySelector('.confirm-no').addEventListener('click', () => {
+            document.body.removeChild(overlay);
+            resolve(false);
+        });
+        
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                document.body.removeChild(overlay);
+                resolve(false);
+            }
+        });
+    });
+}
+
+// Category Classification Function
+function classifyValue(value, limits) {
+    if (!value || !limits) return null;
+    
+    if (value >= limits.codorna.min && value <= limits.codorna.max) {
+        return { name: 'Ovo de codorna', class: 'codorna' };
+    }
+    if (value >= limits.galinha.min && value <= limits.galinha.max) {
+        return { name: 'Ovo de galinha', class: 'galinha' };
+    }
+    if (value >= limits.laranja.min && value <= limits.laranja.max) {
+        return { name: 'Laranja', class: 'laranja' };
+    }
+    if (value >= limits.cocoVerde.min && value <= limits.cocoVerde.max) {
+        return { name: 'Coco verde', class: 'coco-verde' };
+    }
+    if (value >= limits.cocoSeco.min && value <= limits.cocoSeco.max) {
+        return { name: 'Coco seco', class: 'coco-seco' };
+    }
+    
+    return null;
+}
 
 // DOM Elements
 const backBtn = document.getElementById('backBtn');
@@ -158,6 +261,21 @@ function updateAverage(test) {
 }
 
 function updateResults() {
+    const limits = getLimits();
+    
+    // Calculate individual averages
+    const avgTestemunha1 = calculateAverage(measurementData.testemunha1);
+    const avgTestemunha2 = calculateAverage(measurementData.testemunha2);
+    const avgTeste1 = calculateAverage(measurementData.teste1);
+    const avgTeste2 = calculateAverage(measurementData.teste2);
+    
+    // Update individual measurement displays
+    updateIndividualResult('previewTestemunha1', 'categoryTestemunha1', avgTestemunha1, limits);
+    updateIndividualResult('previewTestemunha2', 'categoryTestemunha2', avgTestemunha2, limits);
+    updateIndividualResult('previewTeste1', 'categoryTeste1', avgTeste1, limits);
+    updateIndividualResult('previewTeste2', 'categoryTeste2', avgTeste2, limits);
+    
+    // Calculate group averages
     const mediaTestemunhas = calculateGroupAverage(['testemunha1', 'testemunha2']);
     const mediaTestes = calculateGroupAverage(['teste1', 'teste2']);
     
@@ -165,17 +283,39 @@ function updateResults() {
     const previewMediaTestemunhas = document.getElementById('previewMediaTestemunhas');
     const previewMediaTestes = document.getElementById('previewMediaTestes');
     const previewComparacao = document.getElementById('previewComparacao');
+    const categoryMediaTestemunhas = document.getElementById('categoryMediaTestemunhas');
+    const categoryMediaTestes = document.getElementById('categoryMediaTestes');
     
     if (mediaTestemunhas !== null) {
         previewMediaTestemunhas.textContent = `${mediaTestemunhas.toFixed(3)} kg`;
+        const category = classifyValue(mediaTestemunhas, limits);
+        if (category) {
+            categoryMediaTestemunhas.textContent = category.name;
+            categoryMediaTestemunhas.className = `category-badge ${category.class}`;
+        } else {
+            categoryMediaTestemunhas.textContent = '';
+            categoryMediaTestemunhas.className = 'category-badge';
+        }
     } else {
         previewMediaTestemunhas.textContent = '-';
+        categoryMediaTestemunhas.textContent = '';
+        categoryMediaTestemunhas.className = 'category-badge';
     }
     
     if (mediaTestes !== null) {
         previewMediaTestes.textContent = `${mediaTestes.toFixed(3)} kg`;
+        const category = classifyValue(mediaTestes, limits);
+        if (category) {
+            categoryMediaTestes.textContent = category.name;
+            categoryMediaTestes.className = `category-badge ${category.class}`;
+        } else {
+            categoryMediaTestes.textContent = '';
+            categoryMediaTestes.className = 'category-badge';
+        }
     } else {
         previewMediaTestes.textContent = '-';
+        categoryMediaTestes.textContent = '';
+        categoryMediaTestes.className = 'category-badge';
     }
     
     if (mediaTestemunhas !== null && mediaTestes !== null) {
@@ -188,6 +328,32 @@ function updateResults() {
     } else {
         previewComparacao.textContent = '-';
     }
+}
+
+function updateIndividualResult(valueId, categoryId, average, limits) {
+    const valueElement = document.getElementById(valueId);
+    const categoryElement = document.getElementById(categoryId);
+    
+    if (average !== null) {
+        valueElement.textContent = `${average.toFixed(3)} kg`;
+        const category = classifyValue(average, limits);
+        if (category) {
+            categoryElement.textContent = category.name;
+            categoryElement.className = `category-badge ${category.class}`;
+        } else {
+            categoryElement.textContent = '';
+            categoryElement.className = 'category-badge';
+        }
+    } else {
+        valueElement.textContent = '-';
+        categoryElement.textContent = '';
+        categoryElement.className = 'category-badge';
+    }
+}
+
+function calculateAverage(values) {
+    if (!values || values.length === 0) return null;
+    return values.reduce((sum, val) => sum + val, 0) / values.length;
 }
 
 function calculateGroupAverage(tests) {
@@ -219,7 +385,7 @@ async function loadCurrentProject() {
     const projectId = localStorage.getItem('currentProjectId');
     
     if (!projectId) {
-        alert('Erro: Nenhum projeto selecionado');
+        await customAlert('Nenhum projeto selecionado', 'Erro', 'error');
         window.location.href = 'home.html';
         return;
     }
@@ -231,15 +397,46 @@ async function loadCurrentProject() {
             currentProject = result.project;
             projectNameDisplay.textContent = currentProject.name;
             displayEntries();
+            initializeDatePickers();
         } else {
-            alert('Erro ao carregar projeto: ' + result.error);
+            await customAlert('Erro ao carregar projeto: ' + result.error, 'Erro', 'error');
             window.location.href = 'home.html';
         }
     } catch (error) {
         console.error('Error loading project:', error);
-        alert('Erro ao carregar projeto');
+        await customAlert('Erro ao carregar projeto', 'Erro', 'error');
         window.location.href = 'home.html';
     }
+}
+
+function initializeDatePickers() {
+    const entryDates = currentProject.entries ? currentProject.entries.map(e => e.date) : [];
+    
+    // Initialize date range pickers for graph
+    if (dateFromPicker) dateFromPicker.destroy();
+    if (dateToPicker) dateToPicker.destroy();
+    
+    dateFromPicker = flatpickr(dateFrom, {
+        locale: 'pt',
+        dateFormat: 'Y-m-d',
+        onDayCreate: function(dObj, dStr, fp, dayElem) {
+            const dateStr = dayElem.dateObj.toISOString().split('T')[0];
+            if (entryDates.includes(dateStr)) {
+                dayElem.classList.add('hasEntry');
+            }
+        }
+    });
+    
+    dateToPicker = flatpickr(dateTo, {
+        locale: 'pt',
+        dateFormat: 'Y-m-d',
+        onDayCreate: function(dObj, dStr, fp, dayElem) {
+            const dateStr = dayElem.dateObj.toISOString().split('T')[0];
+            if (entryDates.includes(dateStr)) {
+                dayElem.classList.add('hasEntry');
+            }
+        }
+    });
 }
 
 function displayEntries() {
@@ -308,6 +505,23 @@ function openNewEntry() {
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('entryDate').value = today;
     
+    // Initialize entry date picker with highlighting
+    const entryDates = currentProject.entries ? currentProject.entries.map(e => e.date) : [];
+    
+    if (datePickerInstance) datePickerInstance.destroy();
+    
+    datePickerInstance = flatpickr(document.getElementById('entryDate'), {
+        locale: 'pt',
+        dateFormat: 'Y-m-d',
+        defaultDate: today,
+        onDayCreate: function(dObj, dStr, fp, dayElem) {
+            const dateStr = dayElem.dateObj.toISOString().split('T')[0];
+            if (entryDates.includes(dateStr)) {
+                dayElem.classList.add('hasEntry');
+            }
+        }
+    });
+    
     showModal(entryModal);
 }
 
@@ -348,13 +562,30 @@ async function editEntry(date) {
     });
     updateResults();
     
+    // Initialize entry date picker with highlighting
+    const entryDates = currentProject.entries ? currentProject.entries.map(e => e.date) : [];
+    
+    if (datePickerInstance) datePickerInstance.destroy();
+    
+    datePickerInstance = flatpickr(document.getElementById('entryDate'), {
+        locale: 'pt',
+        dateFormat: 'Y-m-d',
+        defaultDate: entry.date,
+        onDayCreate: function(dObj, dStr, fp, dayElem) {
+            const dateStr = dayElem.dateObj.toISOString().split('T')[0];
+            if (entryDates.includes(dateStr)) {
+                dayElem.classList.add('hasEntry');
+            }
+        }
+    });
+    
     showModal(entryModal);
 }
 
 async function deleteEntry(date) {
     const confirmed = await customConfirm(
-        'Confirmar Exclusão',
-        'Tem certeza que deseja excluir esta entrada?'
+        'Tem certeza que deseja excluir esta entrada?',
+        'Confirmar Exclusão'
     );
     
     if (!confirmed) return;
@@ -367,12 +598,13 @@ async function deleteEntry(date) {
         
         if (result.success) {
             await loadCurrentProject();
+            await customAlert('Entrada excluída com sucesso!', 'Sucesso', 'success');
         } else {
-            alert('Erro ao excluir entrada: ' + result.error);
+            await customAlert('Erro ao excluir entrada: ' + result.error, 'Erro', 'error');
         }
     } catch (error) {
         console.error('Error deleting entry:', error);
-        alert('Erro ao excluir entrada');
+        await customAlert('Erro ao excluir entrada', 'Erro', 'error');
     }
 }
 
@@ -380,13 +612,17 @@ async function saveEntry() {
     // Validate date
     const entryDate = document.getElementById('entryDate').value;
     if (!entryDate) {
-        alert('Por favor, selecione uma data');
+        await customAlert('Por favor, selecione uma data', 'Data Obrigatória', 'warning');
         return;
     }
     
     // Check if date already exists (and we're not editing it)
     if (!editingDate && currentProject.entries.some(e => e.date === entryDate)) {
-        alert('Já existe uma entrada para esta data. Use a opção Editar para modificá-la.');
+        await customAlert(
+            'Já existe uma entrada para esta data. Use a opção Editar para modificá-la.',
+            'Data Duplicada',
+            'warning'
+        );
         return;
     }
     
@@ -430,12 +666,13 @@ async function saveEntry() {
             hideModal(entryModal);
             resetForm();
             await loadCurrentProject();
+            await customAlert('Entrada salva com sucesso!', 'Sucesso', 'success');
         } else {
-            alert('Erro ao salvar entrada: ' + result.error);
+            await customAlert('Erro ao salvar entrada: ' + result.error, 'Erro', 'error');
         }
     } catch (error) {
         console.error('Error saving entry:', error);
-        alert('Erro ao salvar entrada');
+        await customAlert('Erro ao salvar entrada', 'Erro', 'error');
     }
 }
 
@@ -668,44 +905,4 @@ function showModal(modal) {
 
 function hideModal(modal) {
     modal.classList.remove('show');
-}
-
-// Custom confirm dialog
-function customConfirm(title, message) {
-    return new Promise((resolve) => {
-        const dialog = document.createElement('div');
-        dialog.className = 'modal show';
-        dialog.innerHTML = `
-            <div class="modal-content" style="max-width: 450px;">
-                <div class="modal-body" style="text-align: center; padding: 30px;">
-                    <div style="font-size: 3em; margin-bottom: 15px;">⚠️</div>
-                    <h3 style="color: #e0e0e0; margin-bottom: 15px; font-size: 1.3em;">${title}</h3>
-                    <p style="color: #b0b0b0; margin-bottom: 25px; font-size: 1em;">${message}</p>
-                    <div style="display: flex; gap: 15px; justify-content: center;">
-                        <button class="btn btn-primary confirm-yes">Sim</button>
-                        <button class="btn btn-secondary confirm-no">Não</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(dialog);
-        
-        dialog.querySelector('.confirm-yes').addEventListener('click', () => {
-            document.body.removeChild(dialog);
-            resolve(true);
-        });
-        
-        dialog.querySelector('.confirm-no').addEventListener('click', () => {
-            document.body.removeChild(dialog);
-            resolve(false);
-        });
-        
-        dialog.addEventListener('click', (e) => {
-            if (e.target === dialog) {
-                document.body.removeChild(dialog);
-                resolve(false);
-            }
-        });
-    });
 }

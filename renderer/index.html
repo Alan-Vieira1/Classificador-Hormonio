@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Classificador de Frutas - Projeto</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
 </head>
 <body>
     <div class="container">
@@ -212,14 +216,57 @@
                     <!-- Results Preview -->
                     <div class="form-section">
                         <h3>Resultados</h3>
+                        
+                        <!-- Individual Measurements -->
+                        <div class="individual-results-grid">
+                            <div class="individual-result-item">
+                                <span class="result-label">Testemunha 1:</span>
+                                <div class="result-value-container">
+                                    <span class="result-value" id="previewTestemunha1">-</span>
+                                    <span class="category-badge" id="categoryTestemunha1"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="individual-result-item">
+                                <span class="result-label">Testemunha 2:</span>
+                                <div class="result-value-container">
+                                    <span class="result-value" id="previewTestemunha2">-</span>
+                                    <span class="category-badge" id="categoryTestemunha2"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="individual-result-item">
+                                <span class="result-label">Teste 1:</span>
+                                <div class="result-value-container">
+                                    <span class="result-value" id="previewTeste1">-</span>
+                                    <span class="category-badge" id="categoryTeste1"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="individual-result-item">
+                                <span class="result-label">Teste 2:</span>
+                                <div class="result-value-container">
+                                    <span class="result-value" id="previewTeste2">-</span>
+                                    <span class="category-badge" id="categoryTeste2"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Group Averages -->
                         <div class="results-preview">
                             <div class="result-item">
                                 <span class="result-label">Média Testemunhas:</span>
-                                <span class="result-value" id="previewMediaTestemunhas">-</span>
+                                <div class="result-value-container">
+                                    <span class="result-value" id="previewMediaTestemunhas">-</span>
+                                    <span class="category-badge" id="categoryMediaTestemunhas"></span>
+                                </div>
                             </div>
                             <div class="result-item">
                                 <span class="result-label">Média Testes:</span>
-                                <span class="result-value" id="previewMediaTestes">-</span>
+                                <div class="result-value-container">
+                                    <span class="result-value" id="previewMediaTestes">-</span>
+                                    <span class="category-badge" id="categoryMediaTestes"></span>
+                                </div>
                             </div>
                             <div class="result-item">
                                 <span class="result-label">Comparação:</span>
