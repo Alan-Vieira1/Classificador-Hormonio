@@ -1,0 +1,127 @@
+╔═══════════════════════════════════════════════════════╗
+║   QUICK FIX GUIDE - Classificador de Frutas v2.0     ║
+╚═══════════════════════════════════════════════════════╝
+
+🔧 FIXING THE ERRORS
+═════════════════════════════════════════════════════════
+
+ERROR 1: "Attempted to register a second handler for 'delete-project'"
+→ SOLUTION: Download the FIXED main.js file (included in this package)
+
+ERROR 2: "Failed to load URL: file:///...renderer/home.html"
+→ SOLUTION: Make sure files are organized correctly (see below)
+
+
+📁 CORRECT FOLDER STRUCTURE
+═════════════════════════════════════════════════════════
+
+Your folder should look EXACTLY like this:
+
+classificador-frutas-v2/          ← Main folder
+│
+├── main.js                       ← FIXED version (download new one!)
+├── preload.js
+├── package.json
+├── package-lock.json             ← Created by "npm install"
+│
+└── renderer/                     ← Subfolder (MUST exist!)
+    ├── home.html
+    ├── home.css
+    ├── home.js
+    ├── index.html
+    ├── styles.css
+    └── script.js
+
+
+🛠️ HOW TO FIX
+═════════════════════════════════════════════════════════
+
+OPTION A - If you downloaded the ZIP:
+─────────────────────────────────────
+1. Extract the ZIP completely
+2. You should get a folder with everything in place
+3. Download the NEW main.js (the fixed one)
+4. Replace the old main.js with the new one
+
+
+OPTION B - If you downloaded individual files:
+─────────────────────────────────────
+1. Create a folder: "classificador-frutas-v2"
+2. Put these files in the ROOT of that folder:
+   - main.js (NEW FIXED VERSION!)
+   - preload.js
+   - package.json
+   
+3. Create a SUBFOLDER: "renderer"
+4. Put these files INSIDE the "renderer" folder:
+   - home.html
+   - home.css
+   - home.js
+   - index.html
+   - styles.css
+   - script.js
+
+
+✅ VERIFICATION
+═════════════════════════════════════════════════════════
+
+Open Command Prompt / Terminal in your project folder and run:
+
+Windows:
+    dir
+    dir renderer
+
+Mac/Linux:
+    ls -la
+    ls -la renderer
+
+You should see:
+✓ main.js, preload.js, package.json in root
+✓ 6 files in renderer folder
+
+
+🚀 AFTER FILES ARE ORGANIZED
+═════════════════════════════════════════════════════════
+
+1. Open terminal in the project folder
+2. Run: npm install
+3. Run: npm start
+4. App should open! 🎉
+
+
+⚠️ COMMON MISTAKES
+═════════════════════════════════════════════════════════
+
+❌ WRONG: All files in one folder (no renderer subfolder)
+❌ WRONG: Renderer files in root folder
+❌ WRONG: Using OLD main.js (causes duplicate handler error)
+
+✅ RIGHT: Root files in root, renderer files in renderer subfolder
+✅ RIGHT: Using NEW FIXED main.js
+
+
+💡 STILL NOT WORKING?
+═════════════════════════════════════════════════════════
+
+1. Delete the entire folder
+2. Re-download the ZIP
+3. Extract it completely
+4. Download the FIXED main.js
+5. Replace the main.js in the extracted folder
+6. Run: npm install
+7. Run: npm start
+
+
+📞 NEED HELP?
+═════════════════════════════════════════════════════════
+
+Make sure you have:
+✓ Node.js installed (run: node --version)
+✓ All files in correct folders (see structure above)
+✓ FIXED version of main.js (not the old one!)
+✓ Internet connection for "npm install"
+
+
+═════════════════════════════════════════════════════════
+        Good luck! You're almost there! 🎊
+═════════════════════════════════════════════════════════

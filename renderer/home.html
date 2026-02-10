@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classificador de Frutas - Início</title>
+    <link rel="stylesheet" href="home.css">
+</head>
+<body>
+    <div class="container">
+        <header class="home-header">
+            <h1>📊 Classificador de Frutas</h1>
+            <p class="subtitle">Sistema de Análise e Classificação Científica</p>
+        </header>
+
+        <main class="home-main">
+            <div class="action-section">
+                <button id="newProjectBtn" class="action-card new-project">
+                    <div class="card-icon">➕</div>
+                    <h2>Novo Projeto</h2>
+                    <p>Criar um novo projeto de classificação</p>
+                </button>
+
+                <button id="openProjectBtn" class="action-card open-project">
+                    <div class="card-icon">📂</div>
+                    <h2>Abrir Projeto</h2>
+                    <p>Carregar projeto existente</p>
+                </button>
+            </div>
+
+            <div class="recent-projects-section" id="recentProjects" style="display: none;">
+                <h3>Projetos Recentes</h3>
+                <div class="recent-projects-list" id="recentProjectsList">
+                    <!-- Recent projects will be populated here -->
+                </div>
+            </div>
+        </main>
+
+        <footer class="home-footer">
+            <p>Versão 2.0.0 | Sistema de Classificação Científica</p>
+        </footer>
+    </div>
+
+    <!-- New Project Modal -->
+    <div id="newProjectModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>➕ Criar Novo Projeto</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="newProjectForm">
+                    <div class="form-group">
+                        <label for="projectName">Nome do Projeto:</label>
+                        <input 
+                            type="text" 
+                            id="projectName" 
+                            placeholder="Ex: Melancias 2026, Mangas Experimento A"
+                            required
+                            autocomplete="off"
+                        >
+                        <small>O nome identifica o tipo de fruta ou experimento</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="projectDescription">Descrição (opcional):</label>
+                        <textarea 
+                            id="projectDescription" 
+                            placeholder="Informações adicionais sobre o projeto"
+                            rows="3"
+                        ></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Criar Projeto</button>
+                        <button type="button" class="btn btn-secondary cancel-btn">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Open Project Modal -->
+    <div id="openProjectModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>📂 Abrir Projeto</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="search-box">
+                    <input 
+                        type="text" 
+                        id="projectSearch" 
+                        placeholder="🔍 Buscar projeto..."
+                        autocomplete="off"
+                    >
+                </div>
+                <div id="projectsList" class="projects-grid">
+                    <!-- Projects will be populated here -->
+                </div>
+                <div id="noProjects" class="no-data-message" style="display: none;">
+                    <p>Nenhum projeto encontrado.</p>
+                    <p>Crie seu primeiro projeto clicando em "Novo Projeto".</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="home.js"></script>
+</body>
+</html>

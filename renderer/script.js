@@ -1,799 +1,650 @@
-console.log('🚀 Classificador de Frutas iniciado');
-
-// Current project data
-let currentProject = {
-    projectNumber: '',
-    limits: {
-        codornaMin: 0,
-        codornaMax: 0,
-        galinhaMin: 0,
-        galinhaMax: 0,
-        laranjaMin: 0,
-        laranjaMax: 0,
-        cocoVerdeMin: 0,
-        cocoVerdeMax: 0,
-        cocoSecoMin: 0,
-        cocoSecoMax: 0
-    },
-    tests: {
-        testemunha1: [],
-        testemunha2: [],
-        teste1: [],
-        teste2: []
-    }
+// Main script for project view
+let currentProject = null;
+let currentEntry = null;
+let editingDate = null;
+let measurementData = {
+    testemunha1: [],
+    testemunha2: [],
+    teste1: [],
+    teste2: []
 };
+let chartInstance = null;
 
-// Saved projects for comparison
-let savedProjects = [];
-
-// Chart instance
-let comparisonChart = null;
-
-// Confirm dialog
-let confirmResolve = null;
+// DOM Elements
+const backBtn = document.getElementById('backBtn');
+const projectNameDisplay = document.getElementById('projectNameDisplay');
+const viewEntriesBtn = document.getElementById('viewEntriesBtn');
+const viewGraphBtn = document.getElementById('viewGraphBtn');
+const entriesView = document.getElementById('entriesView');
+const graphView = document.getElementById('graphView');
+const newEntryBtn = document.getElementById('newEntryBtn');
+const entriesList = document.getElementById('entriesList');
+const noEntries = document.getElementById('noEntries');
+const entryModal = document.getElementById('entryModal');
+const entryForm = document.getElementById('entryForm');
+const entryModalTitle = document.getElementById('entryModalTitle');
+const dateFrom = document.getElementById('dateFrom');
+const dateTo = document.getElementById('dateTo');
+const applyDateFilter = document.getElementById('applyDateFilter');
+const resetDateFilter = document.getElementById('resetDateFilter');
+const graphContainer = document.getElementById('graphContainer');
+const noGraphData = document.getElementById('noGraphData');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    initializeEventListeners();
-    loadSavedProjects();
+    loadCurrentProject();
+    setupEventListeners();
+    setupMeasurementInputs();
 });
 
-function initializeEventListeners() {
-    // Project number input
-    document.getElementById('projectNumber').addEventListener('input', (e) => {
-        currentProject.projectNumber = e.target.value;
-        updateSaveButton();
+function setupEventListeners() {
+    // Navigation
+    backBtn.addEventListener('click', () => {
+        window.location.href = 'home.html';
     });
 
-    // Limit inputs
-    const limitInputs = [
-        'codornaMin', 'codornaMax', 'galinhaMin', 'galinhaMax',
-        'laranjaMin', 'laranjaMax', 'cocoVerdeMin', 'cocoVerdeMax',
-        'cocoSecoMin', 'cocoSecoMax'
-    ];
-    
-    limitInputs.forEach(id => {
-        const input = document.getElementById(id);
-        if (input) {
-            input.addEventListener('input', (e) => {
-                currentProject.limits[id] = parseFloat(e.target.value) || 0;
-                validateLimits();
-                updateResults();
-            });
-        }
+    viewEntriesBtn.addEventListener('click', () => {
+        switchView('entries');
     });
 
-    // Add value buttons
-    document.querySelectorAll('.add-btn').forEach((btn, index) => {
-        btn.addEventListener('click', () => {
-            const test = ['testemunha1', 'testemunha2', 'teste1', 'teste2'][index];
-            const input = btn.previousElementSibling;
-            const value = parseFloat(input.value);
+    viewGraphBtn.addEventListener('click', () => {
+        switchView('graph');
+        renderGraph();
+    });
 
-            if (!isNaN(value) && value > 0) {
-                addValue(test, value);
-                input.value = '';
-                updateResults();
-                updateSaveButton();
+    // New Entry
+    newEntryBtn.addEventListener('click', () => {
+        openNewEntry();
+    });
+
+    // Entry Form
+    entryForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await saveEntry();
+    });
+
+    // Date Filter
+    applyDateFilter.addEventListener('click', () => {
+        renderGraph();
+    });
+
+    resetDateFilter.addEventListener('click', () => {
+        dateFrom.value = '';
+        dateTo.value = '';
+        renderGraph();
+    });
+
+    // Close modals
+    document.querySelectorAll('.close-btn, .cancel-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const modal = e.target.closest('.modal');
+            if (modal) {
+                hideModal(modal);
+                resetForm();
             }
-        });
-    });
-
-    // Enter key on inputs
-    document.querySelectorAll('.input-group input').forEach((input, index) => {
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const test = ['testemunha1', 'testemunha2', 'teste1', 'teste2'][index];
-                const value = parseFloat(input.value);
-
-                if (!isNaN(value) && value > 0) {
-                    addValue(test, value);
-                    input.value = '';
-                    updateResults();
-                    updateSaveButton();
-                }
-            }
-        });
-    });
-
-    // Save button
-    document.getElementById('saveBtn').addEventListener('click', saveProject);
-
-    // Load button
-    document.getElementById('loadBtn').addEventListener('click', showLoadModal);
-
-    // Compare button
-    document.getElementById('compareBtn').addEventListener('click', showCompareModal);
-
-    // Export button
-    document.getElementById('exportBtn').addEventListener('click', exportProjects);
-
-    // Import button
-    document.getElementById('importBtn').addEventListener('click', importProjects);
-
-    // Generate graph button
-    document.getElementById('generateGraphBtn').addEventListener('click', generateComparisonGraph);
-
-    // Modal close buttons
-    document.querySelectorAll('.close-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            btn.closest('.modal').classList.remove('show');
         });
     });
 
     // Close modal on outside click
-    document.querySelectorAll('.modal').forEach(modal => {
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.classList.remove('show');
+    entryModal.addEventListener('click', (e) => {
+        if (e.target === entryModal) {
+            hideModal(entryModal);
+            resetForm();
+        }
+    });
+}
+
+function setupMeasurementInputs() {
+    const tests = ['testemunha1', 'testemunha2', 'teste1', 'teste2'];
+    
+    tests.forEach(test => {
+        const addBtn = document.querySelector(`button.add-btn[data-test="${test}"]`);
+        const input = document.querySelector(`input[data-test="${test}"]`);
+        
+        addBtn.addEventListener('click', () => {
+            const value = parseFloat(input.value);
+            if (value && value > 0) {
+                measurementData[test].push(value);
+                updateValuesList(test);
+                updateAverage(test);
+                updateResults();
+                input.value = '';
+                input.focus();
+            }
+        });
+
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addBtn.click();
             }
         });
     });
-
-    // Confirm dialog buttons
-    document.getElementById('confirmYes').addEventListener('click', () => {
-        if (confirmResolve) {
-            confirmResolve(true);
-            confirmResolve = null;
-        }
-        document.getElementById('confirmDialog').classList.remove('show');
-    });
-
-    document.getElementById('confirmNo').addEventListener('click', () => {
-        if (confirmResolve) {
-            confirmResolve(false);
-            confirmResolve = null;
-        }
-        document.getElementById('confirmDialog').classList.remove('show');
-    });
 }
 
-function showConfirmDialog(title, message) {
-    return new Promise((resolve) => {
-        confirmResolve = resolve;
-        document.getElementById('confirmTitle').textContent = title;
-        document.getElementById('confirmMessage').textContent = message;
-        document.getElementById('confirmDialog').classList.add('show');
-    });
-}
-
-function validateLimits() {
-    const errorDiv = document.getElementById('limitsError');
-    const errors = [];
-    const limits = currentProject.limits;
+function updateValuesList(test) {
+    const list = document.querySelector(`.values-list[data-test="${test}"]`);
+    list.innerHTML = '';
     
-    // Check for missing values
-    const categories = [
-        { name: 'Ovo de codorna', min: 'codornaMin', max: 'codornaMax' },
-        { name: 'Ovo de galinha', min: 'galinhaMin', max: 'galinhaMax' },
-        { name: 'Laranja', min: 'laranjaMin', max: 'laranjaMax' },
-        { name: 'Coco verde', min: 'cocoVerdeMin', max: 'cocoVerdeMax' },
-        { name: 'Coco seco', min: 'cocoSecoMin', max: 'cocoSecoMax' }
-    ];
-    
-    categories.forEach(cat => {
-        const min = limits[cat.min];
-        const max = limits[cat.max];
-        
-        // Check if min > max
-        if (min > 0 && max > 0 && min >= max) {
-            errors.push(`⚠️ ${cat.name}: Mínimo deve ser menor que Máximo`);
-        }
-        
-        // Check if only one is filled
-        if ((min > 0 && max === 0) || (min === 0 && max > 0)) {
-            errors.push(`⚠️ ${cat.name}: Preencha ambos os valores (Mín e Máx)`);
-        }
-    });
-    
-    // Check for overlapping ranges
-    const ranges = categories.map(cat => ({
-        name: cat.name,
-        min: limits[cat.min],
-        max: limits[cat.max]
-    })).filter(r => r.min > 0 && r.max > 0);
-    
-    for (let i = 0; i < ranges.length; i++) {
-        for (let j = i + 1; j < ranges.length; j++) {
-            const r1 = ranges[i];
-            const r2 = ranges[j];
-            
-            // Check if ranges overlap
-            if ((r1.min <= r2.max && r1.max >= r2.min)) {
-                errors.push(`⚠️ ${r1.name} e ${r2.name}: Faixas sobrepostas`);
-            }
-        }
-    }
-    
-    // Display errors
-    if (errors.length > 0) {
-        errorDiv.innerHTML = errors.join('<br>');
-        errorDiv.style.display = 'block';
-        return false;
-    } else {
-        errorDiv.style.display = 'none';
-        return true;
-    }
-}
-
-function addValue(test, value) {
-    currentProject.tests[test].push(value);
-    renderValues(test);
-    updateAverage(test);
-}
-
-function renderValues(test) {
-    const container = document.querySelector(`.values-list[data-test="${test}"]`);
-    container.innerHTML = '';
-
-    currentProject.tests[test].forEach((value, index) => {
-        const div = document.createElement('div');
-        div.className = 'value-item';
-        div.innerHTML = `
+    measurementData[test].forEach((value, index) => {
+        const item = document.createElement('div');
+        item.className = 'value-item';
+        item.innerHTML = `
             <span class="value-text">${value.toFixed(3)} kg</span>
             <button class="remove-btn" onclick="removeValue('${test}', ${index})">×</button>
         `;
-        container.appendChild(div);
+        list.appendChild(item);
     });
 }
 
 function removeValue(test, index) {
-    currentProject.tests[test].splice(index, 1);
-    renderValues(test);
+    measurementData[test].splice(index, 1);
+    updateValuesList(test);
     updateAverage(test);
     updateResults();
-    updateSaveButton();
-}
-
-function calculateAverage(values) {
-    if (values.length === 0) return 0;
-    const sum = values.reduce((acc, val) => acc + val, 0);
-    return sum / values.length;
-}
-
-function getCategory(avgWeight) {
-    const limits = currentProject.limits;
-    
-    if (avgWeight >= limits.codornaMin && avgWeight <= limits.codornaMax && limits.codornaMin > 0) {
-        return { name: 'Ovo de codorna', class: 'ovo-codorna' };
-    }
-    if (avgWeight >= limits.galinhaMin && avgWeight <= limits.galinhaMax && limits.galinhaMin > 0) {
-        return { name: 'Ovo de galinha', class: 'ovo-galinha' };
-    }
-    if (avgWeight >= limits.laranjaMin && avgWeight <= limits.laranjaMax && limits.laranjaMin > 0) {
-        return { name: 'Laranja', class: 'laranja' };
-    }
-    if (avgWeight >= limits.cocoVerdeMin && avgWeight <= limits.cocoVerdeMax && limits.cocoVerdeMin > 0) {
-        return { name: 'Coco verde', class: 'coco-verde' };
-    }
-    if (avgWeight >= limits.cocoSecoMin && avgWeight <= limits.cocoSecoMax && limits.cocoSecoMin > 0) {
-        return { name: 'Coco seco', class: 'coco-seco' };
-    }
-    
-    return null;
-}
-
-function updateCategoryLabel(elementId, avgWeight) {
-    const categoryElement = document.getElementById(elementId);
-    if (!categoryElement) return;
-    
-    const category = getCategory(avgWeight);
-    
-    if (category && avgWeight > 0) {
-        categoryElement.className = `category-label ${category.class}`;
-        categoryElement.textContent = category.name;
-        categoryElement.style.display = 'inline-block';
-    } else {
-        categoryElement.textContent = '';
-        categoryElement.style.display = 'none';
-    }
 }
 
 function updateAverage(test) {
-    const values = currentProject.tests[test];
-    const avg = calculateAverage(values);
-    const displayElement = document.querySelector(`.average-display[data-test="${test}"] strong`);
+    const display = document.querySelector(`.average-display[data-test="${test}"] strong`);
+    const values = measurementData[test];
     
-    if (values.length > 0) {
-        displayElement.textContent = avg.toFixed(3) + ' kg';
-    } else {
-        displayElement.textContent = '-';
+    if (values.length === 0) {
+        display.textContent = '-';
+        return;
     }
+    
+    const avg = values.reduce((sum, val) => sum + val, 0) / values.length;
+    display.textContent = `${avg.toFixed(3)} kg`;
 }
 
 function updateResults() {
-    // Calculate individual averages
-    const avgTestemunha1 = calculateAverage(currentProject.tests.testemunha1);
-    const avgTestemunha2 = calculateAverage(currentProject.tests.testemunha2);
-    const avgTeste1 = calculateAverage(currentProject.tests.teste1);
-    const avgTeste2 = calculateAverage(currentProject.tests.teste2);
+    const mediaTestemunhas = calculateGroupAverage(['testemunha1', 'testemunha2']);
+    const mediaTestes = calculateGroupAverage(['teste1', 'teste2']);
     
-    // Update individual results
-    updateIndividualResult('mediaTestemunha1', 'categoryTestemunha1', avgTestemunha1);
-    updateIndividualResult('mediaTestemunha2', 'categoryTestemunha2', avgTestemunha2);
-    updateIndividualResult('mediaTeste1', 'categoryTeste1', avgTeste1);
-    updateIndividualResult('mediaTeste2', 'categoryTeste2', avgTeste2);
+    // Update preview
+    const previewMediaTestemunhas = document.getElementById('previewMediaTestemunhas');
+    const previewMediaTestes = document.getElementById('previewMediaTestes');
+    const previewComparacao = document.getElementById('previewComparacao');
     
-    // Calculate group averages
-    const mediaTestemunhas = (avgTestemunha1 + avgTestemunha2) / 2;
-    const mediaTestes = (avgTeste1 + avgTeste2) / 2;
-    
-    // Update group averages display
-    const mediaTestemunhasEl = document.getElementById('mediaTestemunhas');
-    const mediaTestesEl = document.getElementById('mediaTestes');
-    const comparacaoFinalEl = document.getElementById('comparacaoFinal');
-    const comparacaoTextoEl = document.getElementById('comparacaoTexto');
-    
-    // Check if we have data
-    const hasTestemunhaData = currentProject.tests.testemunha1.length > 0 || currentProject.tests.testemunha2.length > 0;
-    const hasTesteData = currentProject.tests.teste1.length > 0 || currentProject.tests.teste2.length > 0;
-    
-    if (hasTestemunhaData) {
-        mediaTestemunhasEl.innerHTML = `<strong>${mediaTestemunhas.toFixed(3)}</strong> kg`;
-        updateCategoryLabel('categoryMediaTestemunhas', mediaTestemunhas);
+    if (mediaTestemunhas !== null) {
+        previewMediaTestemunhas.textContent = `${mediaTestemunhas.toFixed(3)} kg`;
     } else {
-        mediaTestemunhasEl.innerHTML = '<strong>-</strong> kg';
-        updateCategoryLabel('categoryMediaTestemunhas', 0);
+        previewMediaTestemunhas.textContent = '-';
     }
     
-    if (hasTesteData) {
-        mediaTestesEl.innerHTML = `<strong>${mediaTestes.toFixed(3)}</strong> kg`;
-        updateCategoryLabel('categoryMediaTestes', mediaTestes);
+    if (mediaTestes !== null) {
+        previewMediaTestes.textContent = `${mediaTestes.toFixed(3)} kg`;
     } else {
-        mediaTestesEl.innerHTML = '<strong>-</strong> kg';
-        updateCategoryLabel('categoryMediaTestes', 0);
+        previewMediaTestes.textContent = '-';
     }
     
-    // Comparison
-    if (hasTestemunhaData && hasTesteData) {
-        const diferenca = mediaTestes - mediaTestemunhas;
-        const percentual = ((diferenca / mediaTestemunhas) * 100).toFixed(2);
+    if (mediaTestemunhas !== null && mediaTestes !== null) {
+        const diff = mediaTestes - mediaTestemunhas;
+        const percent = ((diff / mediaTestemunhas) * 100).toFixed(1);
+        const comparison = diff > 0 ? 
+            `Testes ${Math.abs(percent)}% maiores` : 
+            `Testes ${Math.abs(percent)}% menores`;
+        previewComparacao.textContent = comparison;
+    } else {
+        previewComparacao.textContent = '-';
+    }
+}
+
+function calculateGroupAverage(tests) {
+    const allValues = [];
+    tests.forEach(test => {
+        allValues.push(...measurementData[test]);
+    });
+    
+    if (allValues.length === 0) return null;
+    
+    return allValues.reduce((sum, val) => sum + val, 0) / allValues.length;
+}
+
+function switchView(view) {
+    if (view === 'entries') {
+        entriesView.classList.add('active');
+        graphView.classList.remove('active');
+        viewEntriesBtn.classList.add('active');
+        viewGraphBtn.classList.remove('active');
+    } else {
+        entriesView.classList.remove('active');
+        graphView.classList.add('active');
+        viewEntriesBtn.classList.remove('active');
+        viewGraphBtn.classList.add('active');
+    }
+}
+
+async function loadCurrentProject() {
+    const projectId = localStorage.getItem('currentProjectId');
+    
+    if (!projectId) {
+        alert('Erro: Nenhum projeto selecionado');
+        window.location.href = 'home.html';
+        return;
+    }
+    
+    try {
+        const result = await window.electronAPI.loadProject(projectId);
         
-        if (diferenca > 0) {
-            comparacaoFinalEl.innerHTML = `<strong style="color: #28a745;">+${diferenca.toFixed(3)} kg (+${percentual}%)</strong>`;
-            comparacaoTextoEl.textContent = 'Testes apresentaram peso maior que testemunhas';
-        } else if (diferenca < 0) {
-            comparacaoFinalEl.innerHTML = `<strong style="color: #dc3545;">${diferenca.toFixed(3)} kg (${percentual}%)</strong>`;
-            comparacaoTextoEl.textContent = 'Testes apresentaram peso menor que testemunhas';
+        if (result.success) {
+            currentProject = result.project;
+            projectNameDisplay.textContent = currentProject.name;
+            displayEntries();
         } else {
-            comparacaoFinalEl.innerHTML = `<strong>0.000 kg (0.00%)</strong>`;
-            comparacaoTextoEl.textContent = 'Pesos idênticos';
+            alert('Erro ao carregar projeto: ' + result.error);
+            window.location.href = 'home.html';
         }
-    } else {
-        comparacaoFinalEl.innerHTML = '<strong>-</strong>';
-        comparacaoTextoEl.textContent = 'Adicione valores para ver a comparação';
+    } catch (error) {
+        console.error('Error loading project:', error);
+        alert('Erro ao carregar projeto');
+        window.location.href = 'home.html';
     }
 }
 
-function updateIndividualResult(valueId, categoryId, avgWeight) {
-    const valueEl = document.getElementById(valueId);
+function displayEntries() {
+    entriesList.innerHTML = '';
     
-    if (avgWeight > 0) {
-        valueEl.innerHTML = `<strong>${avgWeight.toFixed(3)}</strong> kg`;
-        updateCategoryLabel(categoryId, avgWeight);
-    } else {
-        valueEl.innerHTML = '<strong>-</strong> kg';
-        updateCategoryLabel(categoryId, 0);
+    if (!currentProject.entries || currentProject.entries.length === 0) {
+        noEntries.style.display = 'block';
+        return;
     }
+    
+    noEntries.style.display = 'none';
+    
+    currentProject.entries.forEach(entry => {
+        const card = createEntryCard(entry);
+        entriesList.appendChild(card);
+    });
 }
 
-function updateSaveButton() {
-    const saveBtn = document.getElementById('saveBtn');
-    const hasProject = currentProject.projectNumber.trim() !== '';
-    const hasData = Object.values(currentProject.tests).some(arr => arr.length > 0);
-    const limitsValid = validateLimits();
+function createEntryCard(entry) {
+    const card = document.createElement('div');
+    card.className = 'entry-card';
     
-    saveBtn.disabled = !(hasProject && hasData && limitsValid);
+    const date = new Date(entry.date).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+    });
+    
+    const mediaTestemunhas = entry.results?.mediaTestemunhas ?? '-';
+    const mediaTestes = entry.results?.mediaTestes ?? '-';
+    const comparacao = entry.results?.comparacao ?? '-';
+    
+    card.innerHTML = `
+        <div class="entry-date">
+            📅 ${date}
+        </div>
+        <div class="entry-results">
+            <div class="entry-result-row">
+                <span class="entry-result-label">Média Testemunhas:</span>
+                <span class="entry-result-value">${typeof mediaTestemunhas === 'number' ? mediaTestemunhas.toFixed(3) + ' kg' : mediaTestemunhas}</span>
+            </div>
+            <div class="entry-result-row">
+                <span class="entry-result-label">Média Testes:</span>
+                <span class="entry-result-value">${typeof mediaTestes === 'number' ? mediaTestes.toFixed(3) + ' kg' : mediaTestes}</span>
+            </div>
+            <div class="entry-result-row">
+                <span class="entry-result-label">Comparação:</span>
+                <span class="entry-result-value">${comparacao}</span>
+            </div>
+        </div>
+        <div class="entry-actions">
+            <button class="btn-edit" onclick="editEntry('${entry.date}')">✏️ Editar</button>
+            <button class="btn-delete" onclick="deleteEntry('${entry.date}')">🗑️ Excluir</button>
+        </div>
+    `;
+    
+    return card;
 }
 
-async function saveProject() {
-    const result = await window.electronAPI.saveProject(currentProject);
+function openNewEntry() {
+    editingDate = null;
+    entryModalTitle.textContent = 'Nova Entrada';
+    resetForm();
     
-    if (result.success) {
-        await window.electronAPI.showMessage({
-            type: 'info',
-            title: 'Projeto Salvo',
-            message: 'Projeto salvo com sucesso!',
-            buttons: ['OK']
-        });
-        loadSavedProjects();
-    } else {
-        await window.electronAPI.showMessage({
-            type: 'error',
-            title: 'Erro ao Salvar',
-            message: 'Erro ao salvar projeto: ' + result.error,
-            buttons: ['OK']
-        });
-    }
+    // Set today's date
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('entryDate').value = today;
+    
+    showModal(entryModal);
 }
 
-async function loadSavedProjects() {
-    const result = await window.electronAPI.loadProjects();
+async function editEntry(date) {
+    const entry = currentProject.entries.find(e => e.date === date);
+    if (!entry) return;
     
-    if (result.success) {
-        savedProjects = result.projects;
-    }
-}
-
-async function showLoadModal() {
-    await loadSavedProjects();
+    editingDate = date;
+    entryModalTitle.textContent = 'Editar Entrada';
     
-    const modal = document.getElementById('loadModal');
-    const projectsList = document.getElementById('projectsList');
+    // Load entry data
+    document.getElementById('entryDate').value = entry.date;
     
-    projectsList.innerHTML = '';
-    
-    if (savedProjects.length === 0) {
-        projectsList.innerHTML = '<p style="text-align: center; color: #6c757d;">Nenhum projeto salvo encontrado.</p>';
-    } else {
-        savedProjects.forEach(project => {
-            const date = new Date(project.savedAt).toLocaleString('pt-BR', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-            
-            const projectCard = document.createElement('div');
-            projectCard.className = 'project-card';
-            
-            const numTests = Object.values(project.tests).reduce((sum, arr) => sum + arr.length, 0);
-            
-            projectCard.innerHTML = `
-                <div class="project-header">
-                    <span class="project-title">🍍 ${project.projectNumber}</span>
-                    <span class="project-date-text">${date}</span>
-                </div>
-                <div class="project-summary">${numTests} medições totais</div>
-                <div class="project-actions">
-                    <button class="delete-btn" onclick="deleteProject(${project.id}, event)">Excluir</button>
-                </div>
-            `;
-            
-            projectCard.addEventListener('click', (e) => {
-                if (!e.target.classList.contains('delete-btn')) {
-                    loadProject(project);
-                    modal.classList.remove('show');
-                }
-            });
-            
-            projectsList.appendChild(projectCard);
+    // Load limits
+    if (entry.limits) {
+        Object.keys(entry.limits).forEach(key => {
+            const minInput = document.getElementById(`${key}Min`);
+            const maxInput = document.getElementById(`${key}Max`);
+            if (minInput && maxInput) {
+                minInput.value = entry.limits[key].min;
+                maxInput.value = entry.limits[key].max;
+            }
         });
     }
     
-    modal.classList.add('show');
+    // Load measurements
+    measurementData = {
+        testemunha1: entry.measurements?.testemunha1 || [],
+        testemunha2: entry.measurements?.testemunha2 || [],
+        teste1: entry.measurements?.teste1 || [],
+        teste2: entry.measurements?.teste2 || []
+    };
+    
+    // Update UI
+    ['testemunha1', 'testemunha2', 'teste1', 'teste2'].forEach(test => {
+        updateValuesList(test);
+        updateAverage(test);
+    });
+    updateResults();
+    
+    showModal(entryModal);
 }
 
-function loadProject(project) {
-    currentProject = {
-        projectNumber: project.projectNumber,
-        limits: project.limits || {
-            codornaMin: 0,
-            codornaMax: 0,
-            galinhaMin: 0,
-            galinhaMax: 0,
-            laranjaMin: 0,
-            laranjaMax: 0,
-            cocoVerdeMin: 0,
-            cocoVerdeMax: 0,
-            cocoSecoMin: 0,
-            cocoSecoMax: 0
-        },
-        tests: project.tests || {
-            testemunha1: project.hormones?.estradiol || [],
-            testemunha2: project.hormones?.progesterona || [],
-            teste1: project.hormones?.lh || [],
-            teste2: project.hormones?.fsh || []
+async function deleteEntry(date) {
+    const confirmed = await customConfirm(
+        'Confirmar Exclusão',
+        'Tem certeza que deseja excluir esta entrada?'
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+        const result = await window.electronAPI.deleteEntry({
+            projectId: currentProject.id,
+            entryDate: date
+        });
+        
+        if (result.success) {
+            await loadCurrentProject();
+        } else {
+            alert('Erro ao excluir entrada: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Error deleting entry:', error);
+        alert('Erro ao excluir entrada');
+    }
+}
+
+async function saveEntry() {
+    // Validate date
+    const entryDate = document.getElementById('entryDate').value;
+    if (!entryDate) {
+        alert('Por favor, selecione uma data');
+        return;
+    }
+    
+    // Check if date already exists (and we're not editing it)
+    if (!editingDate && currentProject.entries.some(e => e.date === entryDate)) {
+        alert('Já existe uma entrada para esta data. Use a opção Editar para modificá-la.');
+        return;
+    }
+    
+    // Get limits
+    const limits = getLimits();
+    if (!validateLimits(limits)) {
+        return;
+    }
+    
+    // Calculate results
+    const mediaTestemunhas = calculateGroupAverage(['testemunha1', 'testemunha2']);
+    const mediaTestes = calculateGroupAverage(['teste1', 'teste2']);
+    
+    let comparacao = '-';
+    if (mediaTestemunhas !== null && mediaTestes !== null) {
+        const diff = mediaTestes - mediaTestemunhas;
+        const percent = ((diff / mediaTestemunhas) * 100).toFixed(1);
+        comparacao = diff > 0 ? 
+            `Testes ${Math.abs(percent)}% maiores` : 
+            `Testes ${Math.abs(percent)}% menores`;
+    }
+    
+    const entryData = {
+        date: entryDate,
+        limits: limits,
+        measurements: { ...measurementData },
+        results: {
+            mediaTestemunhas,
+            mediaTestes,
+            comparacao
         }
     };
     
-    // Update project name
-    document.getElementById('projectNumber').value = currentProject.projectNumber;
+    try {
+        const result = await window.electronAPI.saveEntry({
+            projectId: currentProject.id,
+            entryData: entryData
+        });
+        
+        if (result.success) {
+            hideModal(entryModal);
+            resetForm();
+            await loadCurrentProject();
+        } else {
+            alert('Erro ao salvar entrada: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Error saving entry:', error);
+        alert('Erro ao salvar entrada');
+    }
+}
+
+function getLimits() {
+    return {
+        codorna: {
+            min: parseFloat(document.getElementById('codornaMin').value) || 0,
+            max: parseFloat(document.getElementById('codornaMax').value) || 0
+        },
+        galinha: {
+            min: parseFloat(document.getElementById('galinhaMin').value) || 0,
+            max: parseFloat(document.getElementById('galinhaMax').value) || 0
+        },
+        laranja: {
+            min: parseFloat(document.getElementById('laranjaMin').value) || 0,
+            max: parseFloat(document.getElementById('laranjaMax').value) || 0
+        },
+        cocoVerde: {
+            min: parseFloat(document.getElementById('cocoVerdeMin').value) || 0,
+            max: parseFloat(document.getElementById('cocoVerdeMax').value) || 0
+        },
+        cocoSeco: {
+            min: parseFloat(document.getElementById('cocoSecoMin').value) || 0,
+            max: parseFloat(document.getElementById('cocoSecoMax').value) || 0
+        }
+    };
+}
+
+function validateLimits(limits) {
+    const errorDiv = document.getElementById('limitsError');
+    const errors = [];
     
-    // Update limits
-    Object.keys(currentProject.limits).forEach(key => {
-        const input = document.getElementById(key);
-        if (input) {
-            input.value = currentProject.limits[key];
+    Object.keys(limits).forEach(key => {
+        if (limits[key].min <= 0 || limits[key].max <= 0) {
+            errors.push(`${key}: valores devem ser maiores que zero`);
+        }
+        if (limits[key].min >= limits[key].max) {
+            errors.push(`${key}: mínimo deve ser menor que máximo`);
         }
     });
     
-    // Render all values
+    // Check for overlaps
+    const ranges = Object.values(limits).sort((a, b) => a.min - b.min);
+    for (let i = 0; i < ranges.length - 1; i++) {
+        if (ranges[i].max > ranges[i + 1].min) {
+            errors.push('Limites não podem se sobrepor');
+            break;
+        }
+    }
+    
+    if (errors.length > 0) {
+        errorDiv.textContent = errors.join('; ');
+        errorDiv.style.display = 'block';
+        return false;
+    }
+    
+    errorDiv.style.display = 'none';
+    return true;
+}
+
+function resetForm() {
+    entryForm.reset();
+    measurementData = {
+        testemunha1: [],
+        testemunha2: [],
+        teste1: [],
+        teste2: []
+    };
+    
     ['testemunha1', 'testemunha2', 'teste1', 'teste2'].forEach(test => {
-        renderValues(test);
+        updateValuesList(test);
         updateAverage(test);
     });
     
-    validateLimits();
     updateResults();
-    updateSaveButton();
+    editingDate = null;
 }
 
-async function deleteProject(projectId, event) {
-    event.stopPropagation();
+function renderGraph() {
+    const entries = currentProject.entries || [];
     
-    const confirmed = await showConfirmDialog(
-        'Confirmar Exclusão',
-        'Tem certeza que deseja excluir este projeto?'
-    );
-    
-    if (confirmed) {
-        const result = await window.electronAPI.deleteProject(projectId);
-        
-        if (result.success) {
-            loadSavedProjects();
-            showLoadModal();
-        }
-    }
-}
-
-async function exportProjects() {
-    const result = await window.electronAPI.exportProject();
-    
-    if (result.success) {
-        await window.electronAPI.showMessage({
-            type: 'info',
-            title: 'Exportação Concluída',
-            message: `${result.count} projeto(s) exportado(s) com sucesso!`,
-            buttons: ['OK']
-        });
-    } else if (!result.canceled) {
-        await window.electronAPI.showMessage({
-            type: 'error',
-            title: 'Erro na Exportação',
-            message: 'Erro ao exportar projetos: ' + result.error,
-            buttons: ['OK']
-        });
-    }
-}
-
-async function importProjects() {
-    const result = await window.electronAPI.importProject();
-    
-    if (result.canceled) {
+    if (entries.length < 2) {
+        graphContainer.style.display = 'none';
+        noGraphData.style.display = 'block';
         return;
     }
     
-    if (result.success) {
-        await window.electronAPI.showMessage({
-            type: 'info',
-            title: 'Importação Concluída',
-            message: `${result.count} projeto(s) importado(s) com sucesso!`,
-            buttons: ['OK']
-        });
-        loadSavedProjects();
-    } else {
-        await window.electronAPI.showMessage({
-            type: 'error',
-            title: 'Erro na Importação',
-            message: 'Erro ao importar projetos: ' + result.error,
-            buttons: ['OK']
+    // Filter by date range
+    let filteredEntries = [...entries];
+    const fromDate = dateFrom.value ? new Date(dateFrom.value) : null;
+    const toDate = dateTo.value ? new Date(dateTo.value) : null;
+    
+    if (fromDate || toDate) {
+        filteredEntries = filteredEntries.filter(entry => {
+            const entryDate = new Date(entry.date);
+            if (fromDate && entryDate < fromDate) return false;
+            if (toDate && entryDate > toDate) return false;
+            return true;
         });
     }
-}
-
-async function showCompareModal() {
-    await loadSavedProjects();
     
-    const modal = document.getElementById('compareModal');
-    const checkboxContainer = document.getElementById('projectCheckboxes');
-    const graphContainer = document.getElementById('graphContainer');
-    const noDataMessage = document.getElementById('noDataMessage');
-    
-    // Clear previous checkboxes
-    checkboxContainer.innerHTML = '';
-    
-    if (savedProjects.length === 0) {
-        checkboxContainer.innerHTML = '<p style="text-align: center; color: #6c757d;">Nenhum projeto salvo encontrado.</p>';
+    if (filteredEntries.length < 2) {
         graphContainer.style.display = 'none';
-        noDataMessage.style.display = 'block';
-    } else {
-        savedProjects.forEach(project => {
-            const date = new Date(project.savedAt).toLocaleString('pt-BR', { 
-                day: '2-digit', 
-                month: '2-digit', 
-                year: 'numeric' 
-            });
-            
-            const checkboxItem = document.createElement('div');
-            checkboxItem.className = 'checkbox-item';
-            checkboxItem.innerHTML = `
-                <input type="checkbox" id="project-${project.id}" value="${project.id}">
-                <label for="project-${project.id}">
-                    <span class="project-name">🍍 ${project.projectNumber}</span>
-                    <span class="project-date">${date}</span>
-                </label>
-            `;
-            
-            checkboxContainer.appendChild(checkboxItem);
-        });
-        
-        graphContainer.style.display = 'none';
-        noDataMessage.style.display = 'block';
-    }
-    
-    modal.classList.add('show');
-}
-
-function generateComparisonGraph() {
-    const checkboxes = document.querySelectorAll('#projectCheckboxes input[type="checkbox"]:checked');
-    
-    if (checkboxes.length === 0) {
-        document.getElementById('graphContainer').style.display = 'none';
-        document.getElementById('noDataMessage').style.display = 'block';
+        noGraphData.style.display = 'block';
         return;
     }
     
-    document.getElementById('graphContainer').style.display = 'block';
-    document.getElementById('noDataMessage').style.display = 'none';
+    graphContainer.style.display = 'block';
+    noGraphData.style.display = 'none';
     
-    // Prepare data for the chart
-    const datasets = [];
-    const colorPalette = [
-        '#4ECDC4', '#FFD93D', '#FF6B6B', '#6BCF7F', '#8B6F47',
-        '#95E1D3', '#F38181', '#AA96DA', '#FCBAD3', '#FFFFD2'
-    ];
+    // Sort by date
+    filteredEntries.sort((a, b) => new Date(a.date) - new Date(b.date));
     
-    // Group projects and create evolution lines
-    const projectGroups = [];
+    // Prepare data
+    const labels = filteredEntries.map(e => e.date);
+    const testemunhasData = filteredEntries.map(e => e.results?.mediaTestemunhas || null);
+    const testesData = filteredEntries.map(e => e.results?.mediaTestes || null);
     
-    checkboxes.forEach((checkbox, index) => {
-        const projectId = parseInt(checkbox.value);
-        const project = savedProjects.find(p => p.id === projectId);
-        
-        if (project) {
-            // Handle different data formats
-            const tests = project.tests || {
-                testemunha1: project.hormones?.estradiol || [],
-                testemunha2: project.hormones?.progesterona || [],
-                teste1: project.hormones?.lh || [],
-                teste2: project.hormones?.fsh || []
-            };
-            
-            const t1 = tests.testemunha1 || [];
-            const t2 = tests.testemunha2 || [];
-            const test1 = tests.teste1 || [];
-            const test2 = tests.teste2 || [];
-            
-            // Calculate averages for this project
-            const avgTestemunha1 = calculateAverage(t1);
-            const avgTestemunha2 = calculateAverage(t2);
-            const avgTeste1 = calculateAverage(test1);
-            const avgTeste2 = calculateAverage(test2);
-            
-            const mediaTestemunhas = (avgTestemunha1 + avgTestemunha2) / 2;
-            const mediaTestes = (avgTeste1 + avgTeste2) / 2;
-            
-            projectGroups.push({
-                project: project,
-                mediaTestemunhas: mediaTestemunhas,
-                mediaTestes: mediaTestes,
-                color: colorPalette[index % colorPalette.length],
-                date: new Date(project.savedAt)
-            });
-        }
-    });
-    
-    // Sort by date to show evolution over time
-    projectGroups.sort((a, b) => a.date - b.date);
-    
-    // Create labels from project names and dates
-    const labels = projectGroups.map(pg => {
-        const date = pg.date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-        return `${pg.project.projectNumber}\n${date}`;
-    });
-    
-    // Create dataset for Média Testemunhas evolution
-    const testemunhasData = projectGroups.map(pg => pg.mediaTestemunhas);
-    datasets.push({
-        label: 'Média Testemunhas',
-        data: testemunhasData,
-        borderColor: '#4dd0e1',
-        backgroundColor: '#4dd0e140',
-        tension: 0.4,
-        pointRadius: 8,
-        pointHoverRadius: 10,
-        borderWidth: 3,
-        fill: false
-    });
-    
-    // Create dataset for Média Testes evolution
-    const testesData = projectGroups.map(pg => pg.mediaTestes);
-    datasets.push({
-        label: 'Média Testes',
-        data: testesData,
-        borderColor: '#ffc107',
-        backgroundColor: '#ffc10740',
-        tension: 0.4,
-        pointRadius: 8,
-        pointHoverRadius: 10,
-        borderWidth: 3,
-        borderDash: [8, 4],
-        fill: false
-    });
-    
-    // Destroy previous chart if exists
-    if (comparisonChart) {
-        comparisonChart.destroy();
+    // Destroy previous chart
+    if (chartInstance) {
+        chartInstance.destroy();
     }
     
-    // Create new chart
-    const ctx = document.getElementById('comparisonChart').getContext('2d');
-    comparisonChart = new Chart(ctx, {
+    // Create chart
+    const ctx = document.getElementById('evolutionChart').getContext('2d');
+    chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
-            datasets: datasets
+            datasets: [
+                {
+                    label: 'Média Testemunhas',
+                    data: testemunhasData,
+                    borderColor: '#4dd0e1',
+                    backgroundColor: 'rgba(77, 208, 225, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Média Testes',
+                    data: testesData,
+                    borderColor: '#ffc107',
+                    backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                    borderWidth: 3,
+                    borderDash: [5, 5],
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: true,
             plugins: {
-                title: {
-                    display: true,
-                    text: 'Evolução de Peso ao Longo do Tempo',
-                    font: {
-                        size: 20,
-                        weight: 'bold'
-                    },
-                    color: '#e0e0e0',
-                    padding: 20
-                },
                 legend: {
-                    display: true,
-                    position: 'top',
                     labels: {
                         color: '#e0e0e0',
                         font: {
                             size: 14,
                             weight: 'bold'
-                        },
-                        padding: 20,
-                        usePointStyle: true
+                        }
                     }
                 },
                 tooltip: {
-                    mode: 'index',
-                    intersect: false,
-                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
-                    borderColor: '#e94560',
-                    borderWidth: 2,
-                    padding: 15,
-                    titleFont: {
-                        size: 14,
-                        weight: 'bold'
-                    },
-                    bodyFont: {
-                        size: 13
-                    },
+                    backgroundColor: 'rgba(15, 37, 55, 0.9)',
+                    titleColor: '#e0e0e0',
+                    bodyColor: '#e0e0e0',
+                    borderColor: '#3a5a72',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: true,
                     callbacks: {
-                        title: function(context) {
-                            return context[0].label.replace('\n', ' - ');
-                        },
                         label: function(context) {
-                            const value = context.parsed.y.toFixed(3);
-                            return `${context.dataset.label}: ${value} kg`;
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += context.parsed.y.toFixed(3) + ' kg';
+                            }
+                            return label;
                         }
                     }
                 }
             },
             scales: {
-                y: {
-                    beginAtZero: false,
-                    title: {
-                        display: true,
-                        text: 'Peso Médio (kg)',
-                        color: '#e0e0e0',
-                        font: {
-                            size: 15,
-                            weight: 'bold'
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'day',
+                        displayFormats: {
+                            day: 'dd/MM/yyyy'
                         }
                     },
                     ticks: {
-                        color: '#b0b0b0',
+                        color: '#e0e0e0',
+                        font: {
+                            size: 12
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(58, 90, 114, 0.3)'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: '#e0e0e0',
                         font: {
                             size: 12
                         },
@@ -802,38 +653,59 @@ function generateComparisonGraph() {
                         }
                     },
                     grid: {
-                        color: 'rgba(255, 255, 255, 0.1)',
-                        lineWidth: 1
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Projetos (ordenados por data)',
-                        color: '#e0e0e0',
-                        font: {
-                            size: 15,
-                            weight: 'bold'
-                        }
-                    },
-                    ticks: {
-                        color: '#b0b0b0',
-                        font: {
-                            size: 11
-                        },
-                        maxRotation: 45,
-                        minRotation: 45
-                    },
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.1)',
-                        lineWidth: 1
+                        color: 'rgba(58, 90, 114, 0.3)'
                     }
                 }
-            },
-            interaction: {
-                mode: 'index',
-                intersect: false
             }
         }
+    });
+}
+
+// Modal functions
+function showModal(modal) {
+    modal.classList.add('show');
+}
+
+function hideModal(modal) {
+    modal.classList.remove('show');
+}
+
+// Custom confirm dialog
+function customConfirm(title, message) {
+    return new Promise((resolve) => {
+        const dialog = document.createElement('div');
+        dialog.className = 'modal show';
+        dialog.innerHTML = `
+            <div class="modal-content" style="max-width: 450px;">
+                <div class="modal-body" style="text-align: center; padding: 30px;">
+                    <div style="font-size: 3em; margin-bottom: 15px;">⚠️</div>
+                    <h3 style="color: #e0e0e0; margin-bottom: 15px; font-size: 1.3em;">${title}</h3>
+                    <p style="color: #b0b0b0; margin-bottom: 25px; font-size: 1em;">${message}</p>
+                    <div style="display: flex; gap: 15px; justify-content: center;">
+                        <button class="btn btn-primary confirm-yes">Sim</button>
+                        <button class="btn btn-secondary confirm-no">Não</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(dialog);
+        
+        dialog.querySelector('.confirm-yes').addEventListener('click', () => {
+            document.body.removeChild(dialog);
+            resolve(true);
+        });
+        
+        dialog.querySelector('.confirm-no').addEventListener('click', () => {
+            document.body.removeChild(dialog);
+            resolve(false);
+        });
+        
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) {
+                document.body.removeChild(dialog);
+                resolve(false);
+            }
+        });
     });
 }

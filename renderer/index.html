@@ -3,272 +3,239 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Classificador de Frutas</title>
+    <title>Classificador de Frutas - Projeto</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>Classificador de Frutas</h1>
-            <div class="header-buttons">
-                <button id="compareBtn" class="btn btn-secondary">📊 Comparar Evolução</button>
-                <button id="loadBtn" class="btn btn-secondary">📂 Carregar Projeto</button>
-                <button id="exportBtn" class="btn btn-secondary">💾 Exportar Todos</button>
-                <button id="importBtn" class="btn btn-secondary">📥 Importar</button>
+        <!-- Top Navigation Bar -->
+        <nav class="top-nav">
+            <button id="backBtn" class="nav-btn">
+                <span class="icon">←</span> Voltar
+            </button>
+            <div class="project-title-nav" id="projectTitleNav">
+                <h1 id="projectNameDisplay">Carregando...</h1>
             </div>
-        </header>
+            <div class="nav-actions">
+                <button id="viewEntriesBtn" class="nav-btn active">
+                    <span class="icon">📋</span> Entradas
+                </button>
+                <button id="viewGraphBtn" class="nav-btn">
+                    <span class="icon">📊</span> Gráfico
+                </button>
+            </div>
+        </nav>
 
+        <!-- Main Content -->
         <main id="mainContent">
-            <div class="input-section">
-                <div class="project-info">
-                    <label>
-                        Nome da Fruta / Projeto:
-                        <input type="text" id="projectNumber" placeholder="Ex: Abacaxi, Manga, etc.">
-                    </label>
+            <!-- Entries View -->
+            <div id="entriesView" class="view-section active">
+                <div class="entries-header">
+                    <h2>Entradas de Dados</h2>
+                    <button id="newEntryBtn" class="btn btn-primary">
+                        <span class="icon">➕</span> Nova Entrada
+                    </button>
                 </div>
 
-                <!-- Category Limits - Compact Version -->
-                <div class="limits-section">
-                    <h2>Limites de Classificação</h2>
-                    <div id="limitsError" class="limits-error" style="display: none;"></div>
-                    <div class="limits-compact">
-                        <div class="limit-row">
-                            <span class="limit-label">Ovo de codorna</span>
-                            <div class="limit-inputs-inline">
-                                <input type="number" step="0.001" class="limit-input-compact" id="codornaMin" placeholder="Mín (kg)">
-                                <span class="separator">—</span>
-                                <input type="number" step="0.001" class="limit-input-compact" id="codornaMax" placeholder="Máx (kg)">
-                            </div>
-                        </div>
-                        <div class="limit-row">
-                            <span class="limit-label">Ovo de galinha</span>
-                            <div class="limit-inputs-inline">
-                                <input type="number" step="0.001" class="limit-input-compact" id="galinhaMin" placeholder="Mín (kg)">
-                                <span class="separator">—</span>
-                                <input type="number" step="0.001" class="limit-input-compact" id="galinhaMax" placeholder="Máx (kg)">
-                            </div>
-                        </div>
-                        <div class="limit-row">
-                            <span class="limit-label">Laranja</span>
-                            <div class="limit-inputs-inline">
-                                <input type="number" step="0.001" class="limit-input-compact" id="laranjaMin" placeholder="Mín (kg)">
-                                <span class="separator">—</span>
-                                <input type="number" step="0.001" class="limit-input-compact" id="laranjaMax" placeholder="Máx (kg)">
-                            </div>
-                        </div>
-                        <div class="limit-row">
-                            <span class="limit-label">Coco verde</span>
-                            <div class="limit-inputs-inline">
-                                <input type="number" step="0.001" class="limit-input-compact" id="cocoVerdeMin" placeholder="Mín (kg)">
-                                <span class="separator">—</span>
-                                <input type="number" step="0.001" class="limit-input-compact" id="cocoVerdeMax" placeholder="Máx (kg)">
-                            </div>
-                        </div>
-                        <div class="limit-row">
-                            <span class="limit-label">Coco seco</span>
-                            <div class="limit-inputs-inline">
-                                <input type="number" step="0.001" class="limit-input-compact" id="cocoSecoMin" placeholder="Mín (kg)">
-                                <span class="separator">—</span>
-                                <input type="number" step="0.001" class="limit-input-compact" id="cocoSecoMax" placeholder="Máx (kg)">
-                            </div>
-                        </div>
-                    </div>
+                <div class="entries-list" id="entriesList">
+                    <!-- Entries will be populated here -->
                 </div>
 
-                <!-- Data Input Section -->
-                <div class="data-input-section">
-                    <h2>Entrada de Dados</h2>
-                    
-                    <!-- Testemunhas Group -->
-                    <div class="test-group testemunhas-group">
-                        <h3>Grupo Testemunha</h3>
-                        <div class="group-boxes">
-                            <div class="classification-box">
-                                <h4>Testemunha 1</h4>
-                                <div class="input-group">
-                                    <input type="number" step="0.001" placeholder="Peso (kg)">
-                                    <button class="add-btn">+</button>
-                                </div>
-                                <div class="values-list" data-test="testemunha1"></div>
-                                <div class="average-display" data-test="testemunha1">
-                                    Média: <strong>-</strong>
-                                </div>
-                            </div>
-
-                            <div class="classification-box">
-                                <h4>Testemunha 2</h4>
-                                <div class="input-group">
-                                    <input type="number" step="0.001" placeholder="Peso (kg)">
-                                    <button class="add-btn">+</button>
-                                </div>
-                                <div class="values-list" data-test="testemunha2"></div>
-                                <div class="average-display" data-test="testemunha2">
-                                    Média: <strong>-</strong>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Testes Group -->
-                    <div class="test-group testes-group">
-                        <h3>Grupo Experimental</h3>
-                        <div class="group-boxes">
-                            <div class="classification-box experimental">
-                                <h4>Teste 1</h4>
-                                <div class="input-group">
-                                    <input type="number" step="0.001" placeholder="Peso (kg)">
-                                    <button class="add-btn">+</button>
-                                </div>
-                                <div class="values-list" data-test="teste1"></div>
-                                <div class="average-display" data-test="teste1">
-                                    Média: <strong>-</strong>
-                                </div>
-                            </div>
-
-                            <div class="classification-box experimental">
-                                <h4>Teste 2</h4>
-                                <div class="input-group">
-                                    <input type="number" step="0.001" placeholder="Peso (kg)">
-                                    <button class="add-btn">+</button>
-                                </div>
-                                <div class="values-list" data-test="teste2"></div>
-                                <div class="average-display" data-test="teste2">
-                                    Média: <strong>-</strong>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Individual Results Section -->
-                    <div class="individual-results-section">
-                        <h3>Resultados Individuais</h3>
-                        <div class="individual-results-grid">
-                            <div class="individual-result-card">
-                                <h4>Testemunha 1</h4>
-                                <div class="result-value" id="mediaTestemunha1">
-                                    <strong>-</strong> kg
-                                </div>
-                                <div class="category-label" id="categoryTestemunha1"></div>
-                            </div>
-
-                            <div class="individual-result-card">
-                                <h4>Testemunha 2</h4>
-                                <div class="result-value" id="mediaTestemunha2">
-                                    <strong>-</strong> kg
-                                </div>
-                                <div class="category-label" id="categoryTestemunha2"></div>
-                            </div>
-
-                            <div class="individual-result-card">
-                                <h4>Teste 1</h4>
-                                <div class="result-value" id="mediaTeste1">
-                                    <strong>-</strong> kg
-                                </div>
-                                <div class="category-label" id="categoryTeste1"></div>
-                            </div>
-
-                            <div class="individual-result-card">
-                                <h4>Teste 2</h4>
-                                <div class="result-value" id="mediaTeste2">
-                                    <strong>-</strong> kg
-                                </div>
-                                <div class="category-label" id="categoryTeste2"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Group Averages -->
-                    <div class="group-averages-section">
-                        <div class="group-average-grid">
-                            <div class="result-card highlight-blue">
-                                <h4>📊 Média Testemunhas</h4>
-                                <div class="result-value" id="mediaTestemunhas">
-                                    <strong>-</strong> kg
-                                </div>
-                                <div class="category-label" id="categoryMediaTestemunhas"></div>
-                            </div>
-
-                            <div class="result-card highlight-yellow">
-                                <h4>🧪 Média Testes</h4>
-                                <div class="result-value" id="mediaTestes">
-                                    <strong>-</strong> kg
-                                </div>
-                                <div class="category-label" id="categoryMediaTestes"></div>
-                            </div>
-                        </div>
-                    </div>
+                <div id="noEntries" class="no-data-message" style="display: none;">
+                    <p>📭 Nenhuma entrada encontrada</p>
+                    <p>Clique em "Nova Entrada" para adicionar dados</p>
                 </div>
             </div>
 
-            <!-- Final Comparison -->
-            <div class="final-comparison-section">
-                <div class="result-card highlight">
-                    <h3>📈 Comparação Final</h3>
-                    <div class="result-value" id="comparacaoFinal">
-                        <strong>-</strong>
+            <!-- Graph View -->
+            <div id="graphView" class="view-section">
+                <div class="graph-header">
+                    <h2>Análise de Evolução</h2>
+                    <div class="date-range-selector">
+                        <label>
+                            De:
+                            <input type="date" id="dateFrom">
+                        </label>
+                        <label>
+                            Até:
+                            <input type="date" id="dateTo">
+                        </label>
+                        <button id="applyDateFilter" class="btn btn-secondary">Aplicar</button>
+                        <button id="resetDateFilter" class="btn btn-secondary">Resetar</button>
                     </div>
-                    <small id="comparacaoTexto">Adicione valores para ver a comparação</small>
                 </div>
-                <button id="saveBtn" class="btn btn-primary" disabled>💾 Salvar Projeto</button>
+
+                <div class="graph-container" id="graphContainer">
+                    <canvas id="evolutionChart"></canvas>
+                </div>
+
+                <div id="noGraphData" class="no-data-message" style="display: none;">
+                    <p>📊 Sem dados suficientes para gerar o gráfico</p>
+                    <p>Adicione pelo menos 2 entradas para visualizar a evolução</p>
+                </div>
             </div>
         </main>
+    </div>
 
-        <!-- Graph Comparison Modal -->
-        <div id="compareModal" class="modal">
-            <div class="modal-content modal-large">
-                <div class="modal-header">
-                    <h2>📊 Comparar Evolução ao Longo do Tempo</h2>
-                    <button class="close-btn">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div class="compare-controls">
-                        <div class="project-selector">
-                            <h3>Selecione os Projetos para Comparar:</h3>
-                            <div id="projectCheckboxes" class="checkbox-list">
-                                <!-- Project checkboxes will be dynamically added here -->
+    <!-- Entry Modal (for creating/editing entries) -->
+    <div id="entryModal" class="modal">
+        <div class="modal-content modal-xlarge">
+            <div class="modal-header">
+                <h2 id="entryModalTitle">Nova Entrada</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="entryForm">
+                    <!-- Date Selection -->
+                    <div class="form-section">
+                        <div class="form-group">
+                            <label for="entryDate">Data da Medição:</label>
+                            <input type="date" id="entryDate" required>
+                        </div>
+                    </div>
+
+                    <!-- Classification Limits -->
+                    <div class="form-section">
+                        <h3>Limites de Classificação</h3>
+                        <div id="limitsError" class="limits-error" style="display: none;"></div>
+                        <div class="limits-compact">
+                            <div class="limit-row">
+                                <span class="limit-label">Ovo de codorna</span>
+                                <div class="limit-inputs-inline">
+                                    <input type="number" step="0.001" class="limit-input-compact" id="codornaMin" placeholder="Mín (kg)">
+                                    <span class="separator">—</span>
+                                    <input type="number" step="0.001" class="limit-input-compact" id="codornaMax" placeholder="Máx (kg)">
+                                </div>
+                            </div>
+                            <div class="limit-row">
+                                <span class="limit-label">Ovo de galinha</span>
+                                <div class="limit-inputs-inline">
+                                    <input type="number" step="0.001" class="limit-input-compact" id="galinhaMin" placeholder="Mín (kg)">
+                                    <span class="separator">—</span>
+                                    <input type="number" step="0.001" class="limit-input-compact" id="galinhaMax" placeholder="Máx (kg)">
+                                </div>
+                            </div>
+                            <div class="limit-row">
+                                <span class="limit-label">Laranja</span>
+                                <div class="limit-inputs-inline">
+                                    <input type="number" step="0.001" class="limit-input-compact" id="laranjaMin" placeholder="Mín (kg)">
+                                    <span class="separator">—</span>
+                                    <input type="number" step="0.001" class="limit-input-compact" id="laranjaMax" placeholder="Máx (kg)">
+                                </div>
+                            </div>
+                            <div class="limit-row">
+                                <span class="limit-label">Coco verde</span>
+                                <div class="limit-inputs-inline">
+                                    <input type="number" step="0.001" class="limit-input-compact" id="cocoVerdeMin" placeholder="Mín (kg)">
+                                    <span class="separator">—</span>
+                                    <input type="number" step="0.001" class="limit-input-compact" id="cocoVerdeMax" placeholder="Máx (kg)">
+                                </div>
+                            </div>
+                            <div class="limit-row">
+                                <span class="limit-label">Coco seco</span>
+                                <div class="limit-inputs-inline">
+                                    <input type="number" step="0.001" class="limit-input-compact" id="cocoSecoMin" placeholder="Mín (kg)">
+                                    <span class="separator">—</span>
+                                    <input type="number" step="0.001" class="limit-input-compact" id="cocoSecoMax" placeholder="Máx (kg)">
+                                </div>
                             </div>
                         </div>
-
-                        <button id="generateGraphBtn" class="btn btn-primary">📊 Gerar Gráfico</button>
                     </div>
 
-                    <div id="graphContainer" class="graph-container" style="display: none;">
-                        <canvas id="comparisonChart"></canvas>
+                    <!-- Measurements -->
+                    <div class="form-section">
+                        <h3>Medições</h3>
+                        
+                        <div class="measurements-grid">
+                            <!-- Testemunhas -->
+                            <div class="measurement-group">
+                                <h4>Grupo Testemunha</h4>
+                                
+                                <div class="measurement-box">
+                                    <h5>Testemunha 1</h5>
+                                    <div class="input-group">
+                                        <input type="number" step="0.001" placeholder="Peso (kg)" data-test="testemunha1">
+                                        <button type="button" class="add-btn" data-test="testemunha1">+</button>
+                                    </div>
+                                    <div class="values-list" data-test="testemunha1"></div>
+                                    <div class="average-display" data-test="testemunha1">
+                                        Média: <strong>-</strong>
+                                    </div>
+                                </div>
+
+                                <div class="measurement-box">
+                                    <h5>Testemunha 2</h5>
+                                    <div class="input-group">
+                                        <input type="number" step="0.001" placeholder="Peso (kg)" data-test="testemunha2">
+                                        <button type="button" class="add-btn" data-test="testemunha2">+</button>
+                                    </div>
+                                    <div class="values-list" data-test="testemunha2"></div>
+                                    <div class="average-display" data-test="testemunha2">
+                                        Média: <strong>-</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Testes -->
+                            <div class="measurement-group experimental">
+                                <h4>Grupo Experimental</h4>
+                                
+                                <div class="measurement-box">
+                                    <h5>Teste 1</h5>
+                                    <div class="input-group">
+                                        <input type="number" step="0.001" placeholder="Peso (kg)" data-test="teste1">
+                                        <button type="button" class="add-btn" data-test="teste1">+</button>
+                                    </div>
+                                    <div class="values-list" data-test="teste1"></div>
+                                    <div class="average-display" data-test="teste1">
+                                        Média: <strong>-</strong>
+                                    </div>
+                                </div>
+
+                                <div class="measurement-box">
+                                    <h5>Teste 2</h5>
+                                    <div class="input-group">
+                                        <input type="number" step="0.001" placeholder="Peso (kg)" data-test="teste2">
+                                        <button type="button" class="add-btn" data-test="teste2">+</button>
+                                    </div>
+                                    <div class="values-list" data-test="teste2"></div>
+                                    <div class="average-display" data-test="teste2">
+                                        Média: <strong>-</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div id="noDataMessage" class="no-data-message">
-                        <p>⚠️ Selecione pelo menos um projeto para visualizar o gráfico.</p>
+                    <!-- Results Preview -->
+                    <div class="form-section">
+                        <h3>Resultados</h3>
+                        <div class="results-preview">
+                            <div class="result-item">
+                                <span class="result-label">Média Testemunhas:</span>
+                                <span class="result-value" id="previewMediaTestemunhas">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Média Testes:</span>
+                                <span class="result-value" id="previewMediaTestes">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Comparação:</span>
+                                <span class="result-value" id="previewComparacao">-</span>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Load Projects Modal -->
-        <div id="loadModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>📂 Carregar Projeto Salvo</h2>
-                    <button class="close-btn">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div id="projectsList"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Custom Confirm Dialog -->
-        <div id="confirmDialog" class="modal">
-            <div class="modal-content confirm-dialog">
-                <div class="modal-body">
-                    <div class="confirm-icon">⚠️</div>
-                    <h3 id="confirmTitle">Confirmar Ação</h3>
-                    <p id="confirmMessage">Você tem certeza?</p>
-                    <div class="confirm-buttons">
-                        <button id="confirmYes" class="btn btn-primary">Sim</button>
-                        <button id="confirmNo" class="btn btn-secondary">Não</button>
+                    <!-- Form Actions -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <span class="icon">💾</span> Salvar Entrada
+                        </button>
+                        <button type="button" class="btn btn-secondary cancel-btn">Cancelar</button>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
     </div>

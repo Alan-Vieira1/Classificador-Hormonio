@@ -1,6 +1,6 @@
 {
   "name": "classificador-frutas",
-  "version": "1.0.4",
+  "version": "2.0.0",
   "description": "Aplicativo para classificação científica de frutas",
   "main": "main.js",
   "scripts": {
